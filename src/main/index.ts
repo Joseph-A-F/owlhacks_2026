@@ -5,7 +5,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-
 const createWindow = () => {
     const win = new BrowserWindow({
         width: 800,
@@ -16,7 +15,12 @@ const createWindow = () => {
         }
     });
 
-    win.loadFile(join(__dirname, './index.html'));
+    // electron-vite provides this env var when running in dev mode
+    if (process.env['ELECTRON_RENDERER_URL']) {
+        win.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    } else {
+        win.loadFile(join(__dirname, '../renderer/index.html'));
+    }
 };
 
 app.whenReady().then(() => {

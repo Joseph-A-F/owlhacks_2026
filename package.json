@@ -1,15 +1,18 @@
 {
   "name": "owlhacks_2026",
-  "main": "dist/index.js",
+  "main": "out/main/index.js",
   "type": "module",
   "private": true,
   "scripts": {
     "build": "bun build ./src/* --outdir dist --target node --external electron",
-    "start": "bun run build && electron ."
+    "start": "bun run build && electron .",
+    "dev": "electron-vite dev"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "electron": "^44.4.5"
+    "electron": "^44.4.5",
+    "electron-vite": "^5.0.0",
+    "nodemon": "^3.1.14"
   },
   "peerDependencies": {
     "typescript": "^5"
