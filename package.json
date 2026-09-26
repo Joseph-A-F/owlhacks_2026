@@ -1,7 +1,6 @@
 {
   "name": "owlhacks_2026",
   "main": "out/main/index.js",
-  "type": "module",
   "private": true,
   "scripts": {
     "build": "electron-vite build",

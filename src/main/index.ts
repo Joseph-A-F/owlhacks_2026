@@ -1,21 +1,23 @@
 import { app, BrowserWindow } from 'electron';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { setupIpcHandlers } from './filesystem/ipc';
+import { fsManager } from './filesystem/manager';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const createWindow = () => {
     const win = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 1024,
+        height: 768,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: join(__dirname, '../preload/index.js')
         }
     });
 
-    // electron-vite provides this env var when running in dev mode
     if (process.env['ELECTRON_RENDERER_URL']) {
         win.loadURL(process.env['ELECTRON_RENDERER_URL']);
     } else {
@@ -24,6 +26,8 @@ const createWindow = () => {
 };
 
 app.whenReady().then(() => {
+    fsManager.initialize();
+    setupIpcHandlers();
     createWindow();
 
     app.on('activate', () => {

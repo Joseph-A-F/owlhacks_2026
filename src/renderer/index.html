@@ -2,43 +2,193 @@
 <html>
 
 <head>
-  <meta charset="UTF-8">
-  <title>OwlHacks 2026</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background-color: #f0f0f0;
-    }
+    <meta charset="UTF-8">
+    <title>OwlHacks 2026</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: #79a6e4;
+            color: #000;
+        }
 
-    .container {
-      text-align: center;
-    }
+        #chrome {
+            height: 30px;
+            -webkit-app-region: drag;
+            background: rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            z-index: 1000;
+            position: absolute;
+            top: 0;
+            width: 100%;
+        }
 
-    h1 {
-      color: #333;
-    }
-  </style>
+        #sidebar {
+            position: absolute;
+            left: 0;
+            top: 30px;
+            bottom: 0;
+            width: 100px;
+            background: #79a6e4;
+            border-right: 1px solid #5a85c2;
+            padding: 10px;
+            box-sizing: border-box;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #sidebar button {
+            background: #c3d6d9;
+            color: #000;
+            border: 3px solid #5c848e;
+            padding: 6px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        #sidebar button.active-category {
+            background: #395c8c;
+            color: #fbd67d;
+            border-color: #2b4566;
+        }
+
+        #sidebar button:hover {
+            background: #a9bcc0;
+        }
+
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            left: 100%;
+            top: 0;
+            background-color: #79a6e4;
+            min-width: 100px;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            border-radius: 4px;
+            padding: 4px;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .dropdown.active .dropdown-content {
+            display: flex;
+        }
+
+        .dropdown-content button {
+            border-radius: 20px;
+            border: 2px solid #5c848e;
+            background: #eef2f3;
+            padding: 4px 8px;
+        }
+
+        .dropdown-content button:hover {
+            background: #d4e0e2;
+        }
+
+        #canvas-container {
+            width: calc(100vw - 100px);
+            height: calc(100vh - 30px);
+            position: absolute;
+            top: 30px;
+            left: 100px;
+            overflow: hidden;
+            background-color: #79a6e4;
+        }
+
+        .canvas-plane {
+            transform-origin: 0 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .node {
+            position: absolute;
+            background: #cfdfe3;
+            border: 4px solid #5c848e;
+            border-radius: 20px;
+            padding: 10px;
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 100px;
+            min-height: 100px;
+            color: #000;
+            font-family: sans-serif;
+        }
+
+        .node:active {
+            cursor: grabbing;
+        }
+
+        .node img,
+        .node video {
+            max-width: 200px;
+            max-height: 200px;
+            pointer-events: none;
+            border-radius: 12px;
+        }
+
+        .node .filename {
+            margin-top: 10px;
+            word-break: break-all;
+            text-align: center;
+            max-width: 200px;
+        }
+
+        #context-menu {
+            position: absolute;
+            display: none;
+            flex-direction: column;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+        }
+
+        #context-menu div {
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+
+        #context-menu div:hover {
+            background: #444;
+        }
+    </style>
 </head>
 
 <body>
-  <div class="container">
-    <h1>Hello OwlHacks 2026!</h1>
-    <p>We are using Node.js <span id="node-version"></span>,
-      Chromium <span id="chrome-version"></span>,
-      and Electron <span id="electron-version"></span>.</p>
-  </div>
-  <script>
-    if (typeof process !== 'undefined' && process.versions) {
-      document.getElementById('node-version').innerText = process.versions.node || 'N/A';
-      document.getElementById('chrome-version').innerText = process.versions.chrome || 'N/A';
-      document.getElementById('electron-version').innerText = process.versions.electron || 'N/A';
-    }
-  </script>
+    <div id="chrome">OwlHacks 2026 Space</div>
+    <div id="canvas-container">
+        <div class="canvas-plane" id="canvas-plane"></div>
+    </div>
+    <div id="sidebar"></div>
+
+    <div id="context-menu">
+        <div id="menu-info">Info</div>
+        <div id="menu-delete">Delete</div>
+    </div>
+
+    <script type="module" src="./src/index.ts"></script>
 </body>
 
 </html>
