@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "bun build ./src/* --outdir dist --target node --external electron",
+    "build": "electron-vite build",
     "start": "bun run build && electron .",
     "dev": "electron-vite dev"
   },

@@ -1,0 +1,30 @@
+{
+  "name": "bubble-file-manager",
+  "version": "0.1.0",
+  "description": "A bubble-themed, Pinterest-style file manager built with Electron for our HCI hackathon project.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.hackathon.bubblefilemanager",
+    "productName": "Bubble File Manager",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "template-assets/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": { "target": "nsis" },
+    "mac": { "target": "dmg" },
+    "linux": { "target": "AppImage" }
+  }
+}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bubble File Manager</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============================================================
+       BACKGROUND LAYERS (bottom to top):
+       1. body's own CSS-animated "caustics" (always there, pure CSS,
+          works with zero setup - see style.css @keyframes caustics).
+       2. #bgGif - an OPTIONAL real photo/gif you drop in yourself at
+          renderer/assets/ocean-caustics.gif. If that file doesn't
+          exist, the onerror handler just hides this <img> and you
+          see the CSS version underneath instead. Nothing breaks
+          either way.
+       ============================================================ -->
+  <img id="bgGif" src="assets/ocean-caustics.gif" alt=""
+       onerror="this.style.display='none'" />
+
+  <div class="app">
+
+    <!-- LEFT SIDEBAR: category tabs (Files / Images / Art / Misc / ...)
+         generated dynamically from whatever top-level folders exist
+         inside the chosen root, plus a "+" that flies out into
+         Upload (add real files into the folder you're viewing) and
+         Template (creates the starter folders) -->
+    <div class="sidebar">
+      <div class="tabs" id="tabs"><!-- filled in by renderer.js --></div>
+
+      <div class="plus-wrap">
+        <div class="shortcut add-shortcut" id="addBtn" title="Add">+</div>
+        <div class="flyout" id="flyout" hidden>
+          <div class="flyout-item" id="uploadOption">Upload</div>
+          <div class="flyout-item" id="templateOption">Template</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <!-- TOP BAR: breadcrumb trail -->
+      <div class="topbar">
+        <span class="crumb" id="homeCrumb">🏠 Home</span>
+        <span id="crumbTrail"></span>
+      </div>
+
+      <!-- THE BOARD: the Pinterest-style bubble/card grid -->
+      <div class="board" id="board"></div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

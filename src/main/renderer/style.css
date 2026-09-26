@@ -1,0 +1,161 @@
+/* =============================================================================
+   style.css — visual theme for the bubble file manager
+   Colors: orange = folder, blue = image, green = text (as requested).
+   ============================================================================= */
+
+:root{
+  --orange:#ffb454; --orange-d:#e8963a;
+  --blue:#5ab8ff;   --blue-d:#3a94e8;
+  --green:#7fe0a0;  --green-d:#4ec97b;
+  --grey-d:#9aa7b5;
+  --panel: rgba(255,255,255,0.14);
+}
+
+html, body { height: 100%; margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; color: #eaf6ff; overflow: hidden; }
+
+/* =============================================================================
+   BACKGROUND
+   Layer 1 (always on): a pure-CSS animated approximation of ocean caustics —
+   two drifting radial-gradient "dot" patterns over a shifting blue gradient.
+   Zero setup required, works offline, never breaks.
+   Layer 2 (optional): #bgGif sits on top of this. If you drop a real
+   downloaded ocean-caustics.gif into renderer/assets/, it covers this CSS
+   layer entirely. If that file is missing, its onerror handler (in
+   index.html) hides it and you just see this CSS version. Either way the
+   background always looks intentional, never a broken image icon.
+   ============================================================================= */
+body{
+  background: linear-gradient(160deg, #012a3a, #014f6b 40%, #016b82 70%, #02839b);
+  background-size: 300% 300%;
+  animation: drift 18s ease-in-out infinite;
+  position: relative;
+}
+@keyframes drift { 0%{background-position:0% 30%} 50%{background-position:100% 70%} 100%{background-position:0% 30%} }
+
+body::before, body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; mix-blend-mode:screen; opacity:.35; z-index:-2;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,.5) 0 2%, transparent 3%),
+    radial-gradient(circle at 70% 60%, rgba(255,255,255,.4) 0 3%, transparent 4%),
+    radial-gradient(circle at 40% 80%, rgba(255,255,255,.3) 0 2%, transparent 3%);
+  background-size:200px 200px;
+  animation: caustics 9s linear infinite;
+}
+body::after{ animation-duration:13s; animation-direction:reverse; opacity:.2; }
+@keyframes caustics{
+  0%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(30px,-20px) scale(1.08)}
+  100%{transform:translate(0,0) scale(1)}
+}
+
+#bgGif{
+  position:fixed; inset:0; width:100%; height:100%; object-fit:cover;
+  z-index:-1; /* above the CSS caustics (-2), below the app content (default 0) */
+}
+
+/* ---- Layout ---- */
+.app{ display:flex; height:100vh; position:relative; z-index:1; }
+
+.sidebar{
+  width:110px; background:rgba(2,20,30,.55); backdrop-filter:blur(6px);
+  display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:16px 10px;
+  border-right:1px solid rgba(255,255,255,.1);
+}
+
+/* ---- Category tabs (Files / Images / Art / Misc / ...) ---- */
+.tabs{ display:flex; flex-direction:column; gap:8px; }
+.tab{
+  background:var(--panel); border:1px solid rgba(255,255,255,.25); border-radius:10px;
+  padding:8px 6px; text-align:center; font-size:12px; font-weight:600; cursor:pointer;
+  color:#eaf6ff; transition:background .12s, transform .12s;
+}
+.tab:hover{ transform:translateY(-1px); background:rgba(255,255,255,.22); }
+.tab.active{ background:var(--blue); color:#022; border-color:var(--blue); }
+
+/* ---- The "+" button and its Upload/Template flyout ---- */
+.plus-wrap{ position:relative; margin-top:auto; }
+.shortcut{
+  width:100%; height:44px; border-radius:10px; background:var(--panel);
+  display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer;
+  border:1px solid rgba(255,255,255,.15); transition:transform .15s;
+}
+.shortcut:hover{ transform:scale(1.05); background:rgba(255,255,255,.22); }
+.add-shortcut{ border:2px dashed rgba(255,255,255,.4); color:#fff; }
+
+.flyout{
+  position:absolute; left:calc(100% + 8px); bottom:0; background:rgba(2,20,30,.92);
+  border:1px solid rgba(255,255,255,.2); border-radius:10px; overflow:hidden;
+  min-width:120px; box-shadow:0 8px 20px rgba(0,0,0,.4); z-index:20;
+}
+.flyout-item{ padding:10px 14px; font-size:13px; cursor:pointer; white-space:nowrap; }
+.flyout-item:hover{ background:rgba(255,255,255,.12); }
+.flyout-item.disabled{ opacity:.4; cursor:not-allowed; }
+.flyout-item.disabled:hover{ background:none; }
+
+.main{ flex:1; display:flex; flex-direction:column; min-width:0; }
+.topbar{
+  display:flex; align-items:center; gap:12px; padding:14px 22px;
+  background:rgba(2,20,30,.35); backdrop-filter:blur(4px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.crumb{ font-size:14px; opacity:.85; cursor:pointer; }
+.crumb.active{ opacity:1; font-weight:600; }
+
+.board{ flex:1; overflow:auto; padding:28px; display:flex; flex-wrap:wrap; gap:26px; align-content:flex-start; }
+
+/* =============================================================================
+   BUBBLES — now square/rounded-rectangle "cards" with a thin colored outline,
+   per the hand-drawn mockup, instead of plain circles.
+
+   Structure per bubble:
+     .bubble                 <- outer wrapper (card + name label), pure layout
+       .card                 <- the outlined box itself. NOT overflow:hidden —
+                                 this is the fix for resizing (see note below).
+         .card-content         <- clips the image/text/icon to the rounded box
+         .resize               <- the drag handle, a sibling of card-content
+
+   NOTE ON THE RESIZE BUG: previously the drag handle lived *inside* an
+   element with `overflow: hidden`, which visually clipped it away at the
+   very corner where you'd need to grab it — so there was nothing there to
+   click. Here, .card has no overflow of its own, so the handle is always
+   reachable; only the inner .card-content clips image/text overflow.
+   ============================================================================= */
+.bubble{ display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; user-select:none; }
+
+.card{
+  position:relative; /* anchors the resize handle */
+  border-radius:16px;
+  border:2.5px solid var(--grey-d);
+  background:rgba(255,255,255,.12);
+  box-shadow:0 6px 16px rgba(0,0,0,.3);
+  display:flex; align-items:stretch; justify-content:stretch;
+  transition:transform .12s;
+}
+.bubble:hover .card{ transform:translateY(-4px); }
+
+.bubble.folder .card{ border-color:var(--orange-d); background:rgba(255,180,84,.22); }
+.bubble.image  .card{ border-color:var(--blue-d);   background:rgba(90,184,255,.22); }
+.bubble.text   .card{ border-color:var(--green-d);  background:rgba(127,224,160,.22); }
+.bubble.other  .card{ border-color:var(--grey-d);   background:rgba(207,216,227,.22); }
+
+.card-content{
+  width:100%; height:100%; overflow:hidden; border-radius:12px;
+  display:flex; align-items:center; justify-content:center; padding:8px;
+  font-size:11px; text-align:center; line-height:1.25;
+}
+.bubble.folder .card-content{ font-size:34px; }
+.bubble.other  .card-content{ font-size:30px; }
+.bubble.image  .card-content{ padding:0; }
+.bubble.image  img{ width:100%; height:100%; object-fit:cover; border-radius:12px; }
+.bubble.text   .card-content{ color:#04321a; }
+
+.bubble .name{ font-size:12px; max-width:130px; text-align:center; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+
+/* Drag handle at the card's corner — visible on hover, easy to grab now
+   that .card no longer clips it. */
+.resize{
+  position:absolute; right:-7px; bottom:-7px; width:16px; height:16px; border-radius:50%;
+  background:#fff; opacity:0; cursor:nwse-resize; box-shadow:0 0 0 2px rgba(0,0,0,.35);
+  transition:opacity .12s;
+}
+.bubble:hover .resize{ opacity:.9; }
