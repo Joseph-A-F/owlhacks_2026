@@ -145,6 +145,11 @@ function createWindow() {
 // -----------------------------------------------------------------------------
 // Filesystem IPC
 // -----------------------------------------------------------------------------
+ipcMain.handle("fs:deleteItem", async (_event, filePath) => {
+  return shell.trashItem(filePath);
+});
+
+
 ipcMain.handle("fs:list", async (_event, { rootPath, folderPath }) => {
   return listFolder(rootPath, folderPath);
 });

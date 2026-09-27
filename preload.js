@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld("api", {
   saveLayout: (rootPath, folderPath, items) => ipcRenderer.invoke("fs:saveLayout", { rootPath, folderPath, items }),
   getState: (rootPath) => ipcRenderer.invoke("fs:getState", rootPath),
   saveShortcuts: (rootPath, shortcuts) => ipcRenderer.invoke("fs:saveShortcuts", { rootPath, shortcuts }),
+  deleteItem: (filePath) => ipcRenderer.invoke("fs:deleteItem", filePath),
   openPath: (filePath) => ipcRenderer.invoke("shell:openPath", filePath),
   // Electron gives us the real OS path for an item dragged from Explorer/Finder.
   getPathForFile: (file) => webUtils.getPathForFile(file),

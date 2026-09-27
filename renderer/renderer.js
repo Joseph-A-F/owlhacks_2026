@@ -13,6 +13,12 @@ let shortcuts = [];
 let dragState = null;
 let saveTimer = null;
 let contextTarget = null;
+let panX = 0;
+let panY = 0;
+let zoom = 1;
+let isPanning = false;
+let panStartX = 0;
+let panStartY = 0;
 
 const board = document.getElementById("board");
 const breadcrumbs = document.getElementById("breadcrumbs");
@@ -21,6 +27,62 @@ const addShortcut = document.getElementById("addShortcut");
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const currentFolder = () => stack[stack.length - 1];
+
+function applyTransform() {
+  const content = document.getElementById("board-content");
+  if (content) {
+    content.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+  }
+}
+
+board.addEventListener("wheel", (e) => {
+  if (e.ctrlKey || e.metaKey || (e.deltaZ !== undefined && Math.abs(e.deltaY) < 1)) {
+    e.preventDefault();
+    const oldZoom = zoom;
+
+    // Exponential zoom for smooth scaling whether using mouse wheel (large delta) or trackpad (small delta)
+    const zoomFactor = Math.exp(-e.deltaY * 0.005);
+    zoom = clamp(zoom * zoomFactor, 0.1, 5);
+
+    const rect = board.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    panX = mouseX - (mouseX - panX) * (zoom / oldZoom);
+    panY = mouseY - (mouseY - panY) * (zoom / oldZoom);
+  } else {
+    // If we want standard wheel to zoom instead of pan, we could do it here, but typically wheel pans.
+    // However, if the user explicitly wants zoom on standard wheel, we can change this.
+    // For now, keep standard wheel as pan, and ctrl+wheel as zoom.
+    panX -= e.deltaX;
+    panY -= e.deltaY;
+  }
+  applyTransform();
+}, { passive: false });
+
+board.addEventListener("pointerdown", (e) => {
+  if (e.target === board || e.target.id === "board-content" || e.target.closest(".empty-state") || (e.target.closest(".welcome") && e.target.tagName !== "BUTTON")) {
+    isPanning = true;
+    panStartX = e.clientX - panX;
+    panStartY = e.clientY - panY;
+    board.setPointerCapture(e.pointerId);
+  }
+});
+board.addEventListener("pointermove", (e) => {
+  if (isPanning) {
+    panX = e.clientX - panStartX;
+    panY = e.clientY - panStartY;
+    applyTransform();
+  }
+});
+const endPan = (e) => {
+  if (isPanning) {
+    isPanning = false;
+    board.releasePointerCapture(e.pointerId);
+  }
+};
+board.addEventListener("pointerup", endPan);
+board.addEventListener("pointercancel", endPan);
 
 // -----------------------------------------------------------------------------
 // Starting the app
@@ -65,6 +127,7 @@ async function openRoot(folderPath) {
   stack = [{ name: "Home", path: root }];
   const state = await window.api.getState(root);
   shortcuts = Array.isArray(state.shortcuts) ? state.shortcuts : [];
+  panX = 0; panY = 0; zoom = 1;
   await renderAll();
 }
 
@@ -73,11 +136,13 @@ async function openRoot(folderPath) {
 // -----------------------------------------------------------------------------
 function navigateTo(index) {
   stack = stack.slice(0, index + 1);
+  panX = 0; panY = 0; zoom = 1;
   renderAll();
 }
 
 function navigateInto(item) {
   stack.push({ name: item.name, path: item.path });
+  panX = 0; panY = 0; zoom = 1;
   renderAll();
 }
 
@@ -121,6 +186,7 @@ async function renderShortcuts() {
             stack.push({ name: piece, path: running });
           }
         }
+        panX = 0; panY = 0; zoom = 1;
         await window.api.listDir(root, stack[stack.length - 1].path);
         await renderAll();
       } catch {
@@ -169,6 +235,11 @@ async function renderAll() {
 
 async function renderBoard() {
   board.innerHTML = "";
+  const boardContent = document.createElement("div");
+  boardContent.id = "board-content";
+  board.appendChild(boardContent);
+  applyTransform();
+
   const folder = currentFolder();
   currentItems = await window.api.listDir(root, folder.path);
 
@@ -176,14 +247,14 @@ async function renderBoard() {
     const empty = document.createElement("div");
     empty.className = "empty-state";
     empty.innerHTML = `<div>🫧</div><strong>Nothing here yet</strong><span>Drop files here or right-click to create a folder.</span>`;
-    board.appendChild(empty);
+    boardContent.appendChild(empty);
     return;
   }
 
   // The board itself is the coordinate system. Each bubble gets an absolute
   // x/y position saved in .bubble-state.json.
   for (const item of currentItems) {
-    board.appendChild(await buildBubble(item));
+    boardContent.appendChild(await buildBubble(item));
   }
 
   // Give new items sensible positions without changing existing positions.
@@ -264,9 +335,14 @@ async function buildBubble(item) {
   // action that opens/enters an item.
   bubble.ondblclick = async (event) => {
     if (event.target === handle) return;
-    if (event.target === handle) return;
     if (item.type === "folder") navigateInto(item);
     else await window.api.openPath(item.path);
+  };
+
+  bubble.oncontextmenu = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    showContextMenu(event.clientX, event.clientY, item, bubble);
   };
 
   return bubble;
@@ -302,8 +378,8 @@ function startMove(event, item, bubble) {
 function moveBubble(event) {
   if (!dragState) return;
   const { item, bubble, startX, startY, originalX, originalY } = dragState;
-  item.x = clamp(originalX + event.clientX - startX, 0, Math.max(0, board.clientWidth - item.width));
-  item.y = Math.max(0, originalY + event.clientY - startY);
+  item.x = originalX + (event.clientX - startX) / zoom;
+  item.y = originalY + (event.clientY - startY) / zoom;
   positionBubble(bubble, item);
 }
 
@@ -329,8 +405,8 @@ function startResize(event, item, card) {
 function resizeBubble(event) {
   if (!dragState) return;
   const { item, card, startX, startY, originalWidth, originalHeight } = dragState;
-  item.width = clamp(originalWidth + event.clientX - startX, 90, 420);
-  item.height = clamp(originalHeight + event.clientY - startY, 90, 420);
+  item.width = clamp(originalWidth + (event.clientX - startX) / zoom, 90, 420);
+  item.height = clamp(originalHeight + (event.clientY - startY) / zoom, 90, 420);
   card.style.width = `${item.width}px`;
   card.style.height = `${item.height}px`;
 }
@@ -470,8 +546,8 @@ function createDropRipple(clientX, clientY) {
   const rect = board.getBoundingClientRect();
   const ripple = document.createElement("div");
   ripple.className = "drop-ripple";
-  ripple.style.left = `${clientX - rect.left + board.scrollLeft}px`;
-  ripple.style.top = `${clientY - rect.top + board.scrollTop}px`;
+  ripple.style.left = `${clientX - rect.left}px`;
+  ripple.style.top = `${clientY - rect.top}px`;
   board.appendChild(ripple);
   setTimeout(() => ripple.remove(), 700);
 }
@@ -479,6 +555,42 @@ function createDropRipple(clientX, clientY) {
 function showError(error) {
   console.error(error);
   alert(error?.message || String(error));
+}
+
+function showContextMenu(x, y, item, bubble) {
+  document.getElementById("context-menu")?.remove();
+
+  const menu = document.createElement("div");
+  menu.id = "context-menu";
+  menu.className = "context-menu";
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "Delete";
+  deleteBtn.className = "context-menu-item";
+  deleteBtn.onclick = async () => {
+    menu.remove();
+    try {
+      await window.api.deleteItem(item.path);
+      currentItems = currentItems.filter((i) => i.path !== item.path);
+      bubble.remove();
+      scheduleSave();
+    } catch (err) {
+      showError(err);
+    }
+  };
+
+  menu.appendChild(deleteBtn);
+  document.body.appendChild(menu);
+
+  setTimeout(() => {
+    document.addEventListener("click", function closeMenu(e) {
+      if (menu && menu.contains(e.target)) return;
+      menu.remove();
+      document.removeEventListener("click", closeMenu);
+    });
+  }, 50);
 }
 
 // Autosave before the window is left. The debounced save normally handles this,
