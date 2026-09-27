@@ -1,8 +1,8 @@
 {
-  "name": "owlhacks_2026",
-  "main": "out/main/index.js",
-  "type": "module",
-  "private": true,
+  "name": "bubble-file-manager",
+  "version": "0.1.0",
+  "description": "A bubble-themed, Pinterest-style file manager built with Electron for our HCI hackathon project.",
+  "main": "main.js",
   "scripts": {
     "build": "electron-vite build",
     "start": "bun run build && electron .",
@@ -11,10 +11,35 @@
   "devDependencies": {
     "@types/bun": "latest",
     "electron": "^44.4.5",
-    "electron-vite": "^5.0.0",
-    "nodemon": "^3.1.14"
+    "electron-builder": "^24.13.3"
   },
+  "build": {
+    "appId": "com.hackathon.bubblefilemanager",
+    "productName": "Bubble File Manager",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "template-assets/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  },
+  "private": true,
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "electron-vite": "^5.0.0"
   }
 }

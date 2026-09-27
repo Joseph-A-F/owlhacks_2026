@@ -2,16 +2,17 @@ export default {
     main: {
         build: {
             lib: {
-                entry: 'src/main/index.ts'
+                entry: 'main.js'
             }
         }
     },
     renderer: {
-        root: 'src/renderer',
+        root: 'renderer',
         build: {
             rollupOptions: {
-                input: 'src/renderer/index.html'
+                input: 'renderer/index.html'
             }
         }
     }
 }
+
