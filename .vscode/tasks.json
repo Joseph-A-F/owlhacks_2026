@@ -15,9 +15,21 @@
             "group": "build"
         },
         {
+            "label": "dev",
+            "type": "shell",
+            "command": "bun run dev",
+            "problemMatcher": []
+        },
+        {
             "label": "install",
             "type": "shell",
             "command": "bun install",
+            "problemMatcher": []
+        },
+        {
+            "label": "dev",
+            "type": "shell",
+            "command": "bun run dev",
             "problemMatcher": []
         }
     ]
