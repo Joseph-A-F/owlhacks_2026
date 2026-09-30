@@ -12,7 +12,12 @@ const fs = require("fs");
 const IMAGE_EXT = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg"];
 const TEXT_EXT = [".txt", ".md", ".js", ".json", ".css", ".html", ".ts", ".log", ".csv"];
 const STATE_FILE = ".bubble-state.json";
-const TEMPLATE_ASSETS_DIR = path.join(__dirname, "template-assets");
+const TEMPLATE_ASSETS_DIR = [
+  path.join(__dirname, "../../template-assets"),
+  path.join(__dirname, "../template-assets"),
+  path.join(__dirname, "template-assets"),
+  path.join(app.getAppPath(), "template-assets")
+].find((p) => fs.existsSync(p)) || path.join(__dirname, "template-assets");
 
 function classify(fullPath, isDirectory) {
   if (isDirectory) return "folder";
@@ -126,6 +131,11 @@ function copyEntryRecursive(sourcePath, destinationFolder) {
 }
 
 function createWindow() {
+  const preloadPath = [
+    path.join(__dirname, "../preload/preload.js"),
+    path.join(__dirname, "preload.js")
+  ].find((p) => fs.existsSync(p)) || path.join(__dirname, "preload.js");
+
   const win = new BrowserWindow({
     width: 1280,
     height: 850,
@@ -134,13 +144,23 @@ function createWindow() {
     titleBarStyle: 'hiddenInset',
     backgroundColor: "#012a3a",
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
 
-  win.loadFile(path.join(__dirname, "renderer", "index.html"));
+  if (process.env.ELECTRON_RENDERER_URL) {
+    win.loadURL(process.env.ELECTRON_RENDERER_URL);
+  } else {
+    const indexPath = [
+      path.join(__dirname, "../renderer/index.html"),
+      path.join(__dirname, "out/renderer/index.html"),
+      path.join(app.getAppPath(), "out/renderer/index.html"),
+      path.join(__dirname, "renderer/index.html")
+    ].find((p) => fs.existsSync(p)) || path.join(__dirname, "renderer/index.html");
+    win.loadFile(indexPath);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -248,13 +268,21 @@ ipcMain.handle("fs:saveShortcuts", async (_event, { rootPath, shortcuts }) => {
 
 ipcMain.handle("shell:openPath", async (_event, filePath) => shell.openPath(filePath));
 
+// -----------------------------------------------------------------------------
+// App Lifecycle
+// -----------------------------------------------------------------------------
 app.whenReady().then(() => {
   createWindow();
+
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
   });
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
 });

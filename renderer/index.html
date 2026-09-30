@@ -5,46 +5,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bubble File Manager</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 
 <body>
-  <img id="bgGif" src="assets/ocean-caustics.gif" alt="" onerror="this.style.display='none'" />
-
-  <div class="app">
-    <aside class="sidebar">
-      <div class="brand">🫧<span>Bubble</span></div>
-      <button class="side-home" id="homeSide">⌂ Home</button>
-      <div class="section-title">SHORTCUTS</div>
-      <div class="shortcuts" id="shortcuts"></div>
-      <button class="add-shortcut" id="addShortcut" title="Add the current folder as a shortcut">＋ Add Shortcut</button>
-      <div class="sidebar-actions">
-        <button class="action-button" id="uploadButton">⬆ Upload Files</button>
-        <button class="action-button" id="templateButton">Open Folder</button>
-      </div>
-    </aside>
-
-    <main class="main">
-      <header class="topbar">
-        <div class="breadcrumbs" id="breadcrumbs"></div>
-        <div class="drop-hint" id="dropHint">Drop files anywhere</div>
-      </header>
-      <section class="board" id="board">
-        <div id="board-content">
-          <div class="welcome" id="welcome">
-            <div class="welcome-bubble">🫧</div>
-            <h1>Bubble File Manager</h1>
-            <p>Turn your folders into a visual workspace.</p>
-            <button id="chooseHome">Choose a folder to begin</button>
-            <button id="quickTemplate">Create a sample template</button>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-
-  <script src="renderer.js"></script>
+  <div id="root"></div>
+  <script type="module" src="./main.tsx"></script>
 </body>
 
 </html>
